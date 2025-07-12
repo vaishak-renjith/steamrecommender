@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Steam Review Analyzer</title>
+    <style>
+        body { font-family: Arial; max-width: 800px; margin: auto; padding: 20px; }
+        h1 { color: #333; }
+        .summary { background: #f1f1f1; padding: 10px 20px; margin-top: 20px; border-radius: 10px; }
+        input { padding: 8px; width: 300px; }
+        button { padding: 8px 16px; }
+    </style>
+</head>
+<body>
+    <h1>Steam Game Review Analyzer</h1>
+    <form method="POST">
+        <input name="game_name" placeholder="Enter game name" required>
+        <button type="submit">Analyze</button>
+    </form>
+
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    {% if summaries['positive_summary'] %}
+        <div class="summary">
+            <h2>Positive Summary</h2>
+            <pre>{{ summaries['positive_summary'] }}</pre>
+        </div>
+        <div class="summary">
+            <h2>Negative Summary</h2>
+            <pre>{{ summaries['negative_summary'] }}</pre>
+        </div>
+    {% endif %}
+</body>
+</html>

@@ -1,0 +1,6 @@
+flask
+requests
+pandas
+vaderSentiment
+google-generativeai
+python-dotenv
