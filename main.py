@@ -6,11 +6,67 @@ import pandas as pd
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import google.generativeai as genai
 from dotenv import load_dotenv
+from functools import lru_cache
 
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 analyzer = SentimentIntensityAnalyzer()
+_gemini_model = None
+
+@lru_cache(maxsize=1)
+def get_latest_gemini_flash_model():
+    """Pick the newest Gemini Flash model that supports generateContent."""
+    fallback = "gemini-flash-latest"
+    try:
+        models = genai.list_models()
+        candidates = [
+            model.name
+            for model in models
+            if "flash" in model.name
+            and "lite" not in model.name
+            and "live" not in model.name
+            and "image" not in model.name
+            and "native" not in model.name
+            and "tts" not in model.name
+            and "generateContent" in getattr(model, "supported_generation_methods", [])
+        ]
+        if not candidates:
+            return fallback
+
+        def version_key(name):
+            # Prefer higher semantic versions; fall back to lexical ordering.
+            match = re.search(r"gemini-(\d+(?:\.\d+)*)-flash", name)
+            if match:
+                version_tuple = tuple(int(p) for p in match.group(1).split("."))
+            else:
+                version_tuple = (-1,)
+            is_preview = "preview" in name
+            return (version_tuple, not is_preview, name)
+
+        latest = max(candidates, key=version_key)
+        return latest.rsplit("/", 1)[-1]
+    except Exception as e:
+        print(f"Gemini model discovery error: {e}")
+        return fallback
+
+
+def preload_gemini_model():
+    """Instantiate the Gemini model once and reuse it for subsequent requests."""
+    global _gemini_model
+    if _gemini_model is not None:
+        return _gemini_model
+    model_name = get_latest_gemini_flash_model()
+    try:
+        _gemini_model = genai.GenerativeModel(model_name)
+    except Exception as e:
+        print(f"Gemini model preload error: {e}")
+        _gemini_model = genai.GenerativeModel("gemini-flash-latest")
+    return _gemini_model
+
+
+# Preload the model during module import so the first request doesn't pay the setup cost.
+preload_gemini_model()
 
 def get_steam_app_id(game_name):
     search_url = f"https://store.steampowered.com/search/?term={game_name.replace(' ', '+')}"
@@ -66,7 +122,7 @@ def summarize_with_gemini(reviews, review_type="positive"):
     - No introductory phrases
 """
     try:
-        model = genai.GenerativeModel('models/gemini-1.5-flash')
+        model = preload_gemini_model()
         response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
