@@ -14,6 +14,12 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 analyzer = SentimentIntensityAnalyzer()
 _gemini_model = None
 
+# Hard deadline (seconds) for a single Gemini call, including the SDK's internal
+# 429 backoff retries. Without this, a rate-limited request retries for ~500s and
+# the gunicorn worker is killed (502). Bounding it lets the request fail fast and
+# fall back to "Summary unavailable" instead of hanging.
+GEMINI_TIMEOUT = 25
+
 @lru_cache(maxsize=1)
 def get_latest_gemini_flash_model():
     """Pick the newest Gemini Flash model that supports generateContent."""
@@ -123,7 +129,9 @@ def summarize_with_gemini(reviews, review_type="positive"):
 """
     try:
         model = preload_gemini_model()
-        response = model.generate_content(prompt)
+        response = model.generate_content(
+            prompt, request_options={"timeout": GEMINI_TIMEOUT}
+        )
         return response.text.strip()
     except Exception as e:
         print(f"Gemini error: {e}")
