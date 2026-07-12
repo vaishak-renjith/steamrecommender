@@ -20,6 +20,18 @@ _gemini_model = None
 # fall back to "Summary unavailable" instead of hanging.
 GEMINI_TIMEOUT = 25
 
+# Steam reviews — especially negative ones — routinely contain profanity, insults
+# and hostility. With default safety thresholds Gemini blocks those responses and
+# returns no content, so response.text raises and the summary silently becomes
+# "Summary unavailable". We're only *analysing* existing reviews, not generating
+# harmful content, so disable blocking for this use case.
+GEMINI_SAFETY_SETTINGS = [
+    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+]
+
 @lru_cache(maxsize=1)
 def get_latest_gemini_flash_model():
     """Pick the newest Gemini Flash model that supports generateContent."""
@@ -130,11 +142,22 @@ def summarize_with_gemini(reviews, review_type="positive"):
     try:
         model = preload_gemini_model()
         response = model.generate_content(
-            prompt, request_options={"timeout": GEMINI_TIMEOUT}
+            prompt,
+            request_options={"timeout": GEMINI_TIMEOUT},
+            safety_settings=GEMINI_SAFETY_SETTINGS,
         )
-        return response.text.strip()
+        # Don't use the response.text accessor blindly: if the candidate was
+        # blocked or truncated it has no parts and .text raises. Read defensively
+        # and log the real finish_reason so failures are diagnosable.
+        candidate = response.candidates[0] if response.candidates else None
+        parts = getattr(getattr(candidate, "content", None), "parts", None)
+        if candidate and parts:
+            return response.text.strip()
+        finish_reason = getattr(candidate, "finish_reason", "NO_CANDIDATES")
+        print(f"Gemini returned no usable content ({review_type}): finish_reason={finish_reason}")
+        return "Summary unavailable."
     except Exception as e:
-        print(f"Gemini error: {e}")
+        print(f"Gemini error ({review_type}): {e}")
         return "Summary unavailable."
 
 def summarize_top_reviews_gemini(df, top_n=3):
