@@ -1,35 +1,211 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Steam Review Analyzer</title>
     <style>
-        body { font-family: Arial; max-width: 800px; margin: auto; padding: 20px; }
-        h1 { color: #333; }
-        .summary { background: #f1f1f1; padding: 10px 20px; margin-top: 20px; border-radius: 10px; }
-        input { padding: 8px; width: 300px; }
-        button { padding: 8px 16px; }
+        :root {
+            --bg: #1b2838;
+            --bg-2: #171a21;
+            --panel: #21313f;
+            --panel-2: #2a3f50;
+            --accent: #66c0f4;
+            --accent-2: #1a9fff;
+            --text: #c7d5e0;
+            --text-dim: #8f98a0;
+            --pos: #5ba32b;
+            --pos-glow: rgba(122, 199, 76, .25);
+            --neg: #c0392b;
+            --neg-glow: rgba(214, 69, 65, .25);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: "Motiva Sans", "Segoe UI", Arial, sans-serif;
+            color: var(--text);
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(1200px 600px at 50% -10%, #2a475e 0%, transparent 60%),
+                linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+            background-attachment: fixed;
+        }
+
+        .wrap {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 48px 24px 64px;
+        }
+
+        header { text-align: center; margin-bottom: 36px; }
+
+        h1 {
+            font-size: 2.4rem;
+            font-weight: 800;
+            margin: 0 0 8px;
+            letter-spacing: .5px;
+            background: linear-gradient(90deg, #ffffff, var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        form {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            background: var(--panel);
+            padding: 18px;
+            border-radius: 12px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, .35);
+            border: 1px solid rgba(102, 192, 244, .12);
+        }
+
+        input {
+            flex: 1 1 300px;
+            min-width: 0;
+            padding: 12px 16px;
+            font-size: 1rem;
+            color: var(--text);
+            background: var(--bg-2);
+            border: 1px solid rgba(102, 192, 244, .2);
+            border-radius: 8px;
+            outline: none;
+            transition: border-color .15s, box-shadow .15s;
+        }
+
+        input::placeholder { color: var(--text-dim); }
+
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(102, 192, 244, .18);
+        }
+
+        button {
+            padding: 12px 28px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(90deg, var(--accent-2), var(--accent));
+            transition: filter .15s, transform .05s;
+        }
+
+        button:hover { filter: brightness(1.1); }
+        button:active { transform: translateY(1px); }
+
+        .error {
+            margin-top: 24px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            background: var(--neg-glow);
+            border: 1px solid var(--neg);
+            color: #ffb3ae;
+            text-align: center;
+        }
+
+        .results {
+            margin-top: 28px;
+            display: grid;
+            gap: 20px;
+        }
+
+        @media (min-width: 720px) {
+            .results { grid-template-columns: 1fr 1fr; }
+        }
+
+        .summary {
+            background: var(--panel);
+            border-radius: 12px;
+            padding: 0;
+            overflow: hidden;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, .3);
+            border: 1px solid rgba(255, 255, 255, .04);
+        }
+
+        .summary h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0;
+            padding: 16px 20px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .summary.positive h2 { background: linear-gradient(90deg, var(--pos), transparent); }
+        .summary.negative h2 { background: linear-gradient(90deg, var(--neg), transparent); }
+
+        .summary .icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, .25);
+            font-size: .95rem;
+        }
+
+        .summary .body {
+            padding: 8px 22px 20px;
+            font-size: 1rem;
+            line-height: 1.7;
+            white-space: pre-line;
+            font-family: inherit;
+            color: var(--text);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: var(--text-dim);
+            font-size: .85rem;
+        }
     </style>
 </head>
 <body>
-    <h1>Steam Game Review Analyzer</h1>
-    <form method="POST">
-        <input name="game_name" placeholder="Enter game name" required>
-        <button type="submit">Analyze</button>
-    </form>
+    <div class="wrap">
+        <header>
+            <h1>Steam Game Review Analyzer</h1>
+            <p class="subtitle">Enter a game and get the community's honest highs and lows at a glance.</p>
+        </header>
 
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
+        <form method="POST">
+            <input name="game_name" placeholder="Enter game name (e.g. Elden Ring)" required autofocus>
+            <button type="submit">Analyze</button>
+        </form>
 
-    {% if summaries['positive_summary'] %}
-        <div class="summary">
-            <h2>Positive Summary</h2>
-            <pre>{{ summaries['positive_summary'] }}</pre>
-        </div>
-        <div class="summary">
-            <h2>Negative Summary</h2>
-            <pre>{{ summaries['negative_summary'] }}</pre>
-        </div>
-    {% endif %}
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+
+        {% if summaries['positive_summary'] %}
+            <div class="results">
+                <div class="summary positive">
+                    <h2><span class="icon">👍</span> What players love</h2>
+                    <div class="body">{{ summaries['positive_summary'] }}</div>
+                </div>
+                <div class="summary negative">
+                    <h2><span class="icon">👎</span> What players criticize</h2>
+                    <div class="body">{{ summaries['negative_summary'] }}</div>
+                </div>
+            </div>
+        {% endif %}
+
+        <footer>Summaries generated from recent Steam reviews.</footer>
+    </div>
 </body>
 </html>
