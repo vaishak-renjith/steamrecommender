@@ -169,6 +169,47 @@
             color: var(--text-dim);
             font-size: .85rem;
         }
+
+        .loading {
+            display: none;
+            margin-top: 32px;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            text-align: center;
+        }
+
+        .loading.show { display: flex; }
+
+        .spinner {
+            width: 42px;
+            height: 42px;
+            border: 4px solid rgba(102, 192, 244, .2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-text {
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .loading-text .game { color: var(--accent); }
+
+        .loading-text .dots::after {
+            content: "";
+            animation: dots 1.2s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%   { content: ""; }
+            25%  { content: "."; }
+            50%  { content: ".."; }
+            75%  { content: "..."; }
+        }
     </style>
 </head>
 <body>
@@ -178,10 +219,15 @@
             <p class="subtitle">Enter a game and get the community's honest highs and lows at a glance.</p>
         </header>
 
-        <form method="POST">
-            <input name="game_name" placeholder="Enter game name (e.g. Elden Ring)" required autofocus>
+        <form method="POST" id="analyze-form">
+            <input name="game_name" id="game-input" placeholder="Enter game name (e.g. Elden Ring)" required autofocus>
             <button type="submit">Analyze</button>
         </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p class="loading-text">AI overview for "<span class="game" id="loading-game"></span>" generating<span class="dots"></span></p>
+        </div>
 
         {% if error %}
             <p class="error">{{ error }}</p>
@@ -202,5 +248,18 @@
 
         <footer>Summaries generated from recent Steam reviews.</footer>
     </div>
+
+    <script>
+        (function () {
+            var form = document.getElementById("analyze-form");
+            var input = document.getElementById("game-input");
+            var loading = document.getElementById("loading");
+            var loadingGame = document.getElementById("loading-game");
+            form.addEventListener("submit", function () {
+                loadingGame.textContent = input.value.trim();
+                loading.classList.add("show");
+            });
+        })();
+    </script>
 </body>
 </html>
