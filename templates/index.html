@@ -23,13 +23,11 @@
         * { box-sizing: border-box; }
 
         body {
-            font-family: "Motiva Sans", "Segoe UI", Arial, sans-serif;
+            font-family: "Courier New", Courier, monospace;
             color: var(--text);
             margin: 0;
             min-height: 100vh;
-            background:
-                radial-gradient(1200px 600px at 50% -10%, #2a475e 0%, transparent 60%),
-                linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+            background: linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
             background-attachment: fixed;
         }
 
@@ -46,10 +44,7 @@
             font-weight: 800;
             margin: 0 0 8px;
             letter-spacing: .5px;
-            background: linear-gradient(90deg, #ffffff, var(--accent));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #ffffff;
         }
 
         .subtitle {
