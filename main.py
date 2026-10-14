@@ -21,10 +21,16 @@ if api_key:
 
 analyzer = SentimentIntensityAnalyzer()
 
-# Preferred fast, low-latency Flash models.
-# Models like gemini-3.7/3.8 are thinking/reasoning models by default that take 20-40s or timeout (504).
-# gemini-2.5-flash responds in ~1-3s, well within interactive web deadlines.
-PREFERRED_MODELS = ["gemini-2.5-flash", "gemini-3.6-flash", "gemini-3.5-flash"]
+# Preferred fast, low-latency Flash and Flash-Lite models.
+# Flash-Lite models respond in ~1s, have separate quota pools, and avoid reasoning timeouts.
+PREFERRED_MODELS = [
+    "gemini-flash-lite-latest",
+    "gemini-3.1-flash-lite",
+    "gemini-3.5-flash-lite",
+    "gemini-2.5-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+]
 
 # Bounded timeout (seconds) for each individual Gemini call.
 GEMINI_TIMEOUT = 20
